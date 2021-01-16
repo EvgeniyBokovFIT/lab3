@@ -15,13 +15,16 @@ Point& Point::operator = (const Point other)
 
 Gamer::Gamer()
 {
+	HitOnPreviousTurn = false;
+	ShipWasDestroyedOnPreviousTurn = false;
 	this->field.resize(10);
 	for (int i = 0; i < field.size(); i++)
 	{
 		field[i].resize(10, PointState::Empty);
 	}
 }
-bool Gamer::IsCorrectShip(Point point, bool horizontal, ShipType type)
+
+bool Gamer::IsCorrectPlaceForShip(Point point, bool horizontal, ShipType type)
 {
 	if (point.x > 9 || point.y > 9 || point.x < 0 || point.y < 0)
 	{
@@ -59,7 +62,6 @@ bool Gamer::IsCorrectShip(Point point, bool horizontal, ShipType type)
 	}
 	return true;
 }
-
 void Gamer::SetShip(Point point, bool horizontal, ShipType Type)
 {
 	if (horizontal)
@@ -109,7 +111,7 @@ void Gamer::FillFieldRandom()
 		IsHorizontal = (rand() % 2);
 		point.x = rand() % 10;
 		point.y = rand() % 10;
-	} while (!IsCorrectShip(point, IsHorizontal, ShipType::BattleShip));
+	} while (!IsCorrectPlaceForShip(point, IsHorizontal, ShipType::BattleShip));
 	SetShip(point, IsHorizontal, ShipType::BattleShip);
 
 	for (int i = 0; i < 2; ++i)
@@ -119,7 +121,7 @@ void Gamer::FillFieldRandom()
 			IsHorizontal = (rand() % 2);
 			point.x = rand() % 10;
 			point.y = rand() % 10;
-		} while (!IsCorrectShip(point, IsHorizontal, ShipType::Cruiser));
+		} while (!IsCorrectPlaceForShip(point, IsHorizontal, ShipType::Cruiser));
 		SetShip(point, IsHorizontal, ShipType::Cruiser);
 	}
 	for (int i = 0; i < 3; ++i)
@@ -129,7 +131,7 @@ void Gamer::FillFieldRandom()
 			IsHorizontal = (rand() % 2);
 			point.x = rand() % 10;
 			point.y = rand() % 10;
-		} while (!IsCorrectShip(point, IsHorizontal, ShipType::Destroyer));
+		} while (!IsCorrectPlaceForShip(point, IsHorizontal, ShipType::Destroyer));
 		SetShip(point, IsHorizontal, ShipType::Destroyer);
 	}
 	for (int i = 0; i < 4; ++i)
@@ -139,7 +141,7 @@ void Gamer::FillFieldRandom()
 			IsHorizontal = (rand() % 2);
 			point.x = rand() % 10;
 			point.y = rand() % 10;
-		} while (!IsCorrectShip(point, IsHorizontal, ShipType::TorpedoBoat));
+		} while (!IsCorrectPlaceForShip(point, IsHorizontal, ShipType::TorpedoBoat));
 		SetShip(point, IsHorizontal, ShipType::TorpedoBoat);
 	}
 }
@@ -169,7 +171,7 @@ void Gamer::FillField()
 
 		BattleShipAttempts++;
 
-	} while (!IsCorrectShip(point, IsHorizontal, ShipType::BattleShip));
+	} while (!IsCorrectPlaceForShip(point, IsHorizontal, ShipType::BattleShip));
 
 	SetShip(point, IsHorizontal, ShipType::BattleShip);
 
@@ -197,7 +199,7 @@ void Gamer::FillField()
 			CruiserAttempts++;
 
 
-		} while (!IsCorrectShip(point, IsHorizontal, ShipType::Cruiser));
+		} while (!IsCorrectPlaceForShip(point, IsHorizontal, ShipType::Cruiser));
 
 		SetShip(point, IsHorizontal, ShipType::Cruiser);
 	}
@@ -225,7 +227,7 @@ void Gamer::FillField()
 			DestroyerAttempts++;
 
 
-		} while (!IsCorrectShip(point, IsHorizontal, ShipType::Destroyer));
+		} while (!IsCorrectPlaceForShip(point, IsHorizontal, ShipType::Destroyer));
 
 		SetShip(point, IsHorizontal, ShipType::Destroyer);
 	}
@@ -252,7 +254,7 @@ void Gamer::FillField()
 
 			TorpedoBoatAttempts++;
 
-		} while (!IsCorrectShip(point, IsHorizontal, ShipType::TorpedoBoat));
+		} while (!IsCorrectPlaceForShip(point, IsHorizontal, ShipType::TorpedoBoat));
 
 		SetShip(point, IsHorizontal, ShipType::TorpedoBoat);
 	}
@@ -370,6 +372,7 @@ Point OptimalGamer::NextTurn()
 
 OptimalGamer::OptimalGamer()
 {
+	HitDirection = 0;
 	FillFieldRandom();
 }
 
@@ -401,17 +404,29 @@ bool Referee::IsCorrectField(vector<vector<PointState>> field)
 			{
 				if (!(i - 1 >= 0 && field[i - 1][j] == PointState::Ship) && !(j - 1 >= 0 && field[i][j - 1] == PointState::Ship))
 				{
-					size_t length = 1,
-						stepY = 0,
-						stepX = 0;
-					if (i + 1 < 10 && field[i + 1][j] == PointState::Ship)
-						stepY = 1;
+					size_t length = 1;
+					size_t TurnY = 0;
+					size_t TurnX = 0;
+
+					if (i + 1 <= 9 && field[i + 1][j] == PointState::Ship)
+					{
+						TurnY = 1;
+					}
 					else
-						stepX = 1;
-					while (i + stepY < 10 && j + stepX < 10 && field[i + stepY][j + stepX] == PointState::Ship)
+					{
+						TurnX = 1;
+					}
+					while (i + TurnY <= 9 && j + TurnX <= 9 && field[i + TurnY][j + TurnX] == PointState::Ship)
 					{
 						length++;
-						stepY ? stepY++ : stepX++;
+						if (TurnY)
+						{
+							TurnY++;
+						}
+						else
+						{
+							TurnX++;
+						}
 					}
 
 					if (length > 0 && length < 5)
@@ -458,7 +473,7 @@ bool Referee::IsCorrectTurn(Point point, bool isFirst)
 			return false;
 		}
 	}
-
+	
 	return true;
 }
 
@@ -469,26 +484,24 @@ PointState Referee::Step(Point point, bool isFirst)
 		if (SecondGamerField[point.y][point.x] == PointState::Empty)
 		{
 			SecondGamerField[point.y][point.x] = PointState::Miss;
-			{
-				return PointState::Miss;
-			}
+			return PointState::Miss;
 		}
 		if (SecondGamerField[point.y][point.x] == PointState::Ship)
 		{
 
 			SecondGamerField[point.y][point.x] = PointState::Hit;
 
-			int i = 1;
-			for(int i = 1; point.y - i >= 0 && SecondGamerField[point.y - i][point.x] != PointState::Empty; i++)
+			for (int i = 1 ; (point.y- i >= 0) && SecondGamerField[point.y - i][point.x] != PointState::Miss
+				&& SecondGamerField[point.y - i][point.x] != PointState::Empty; i++)
 			{
 				if (SecondGamerField[point.y - i][point.x] == PointState::Ship)
 				{
 					return PointState::Hit;
 				}
-				i++;
 			}
 
-			for (int i = 1; point.y + i < 10 && SecondGamerField[point.y + i][point.x] != PointState::Empty; i++)
+			for (int i = 1;point.y+ i <= 9 && SecondGamerField[point.y + i][point.x] != PointState::Miss
+				&& SecondGamerField[point.y + i][point.x] != PointState::Empty; i++)
 			{
 				if (SecondGamerField[point.y + i][point.x] == PointState::Ship)
 				{
@@ -496,7 +509,8 @@ PointState Referee::Step(Point point, bool isFirst)
 				}
 			}
 
-			for (int i = 1; point.x - i > -1 && SecondGamerField[point.y][point.x - i] != PointState::Empty; i++)
+			for (int i = 1;point.x- i >= 0 && SecondGamerField[point.y][point.x - i] != PointState::Miss
+				&& SecondGamerField[point.y][point.x - i] != PointState::Empty; i++)
 			{
 				if (SecondGamerField[point.y][point.x - i] == PointState::Ship)
 				{
@@ -504,7 +518,8 @@ PointState Referee::Step(Point point, bool isFirst)
 				}
 			}
 
-			for (int i = 1; point.x + i < 10 && SecondGamerField[point.y][point.x + i] != PointState::Empty; i++)
+			for (int i = 1;point.x+ i <= 9 && SecondGamerField[point.y][point.x + i] != PointState::Miss
+				&& SecondGamerField[point.y][point.x + i] != PointState::Empty; i++)
 			{
 				if (SecondGamerField[point.y][point.x + i] == PointState::Ship)
 				{
@@ -512,46 +527,44 @@ PointState Referee::Step(Point point, bool isFirst)
 				}
 			}
 
-			int TurnY = 0;
-			int	TurnX = 0;
+			Point Direction;
 
 			if (point.y - 1 >= 0 && SecondGamerField[point.y - 1][point.x] == PointState::Hit)
 			{
-				TurnY = -1;
+				Direction.y = -1;
 			}
-			else if (point.y + 1 < 10 && SecondGamerField[point.y + 1][point.x] == PointState::Hit)
+			else if (point.y + 1 <= 9 && SecondGamerField[point.y + 1][point.x] == PointState::Hit)
 			{
-				TurnY = 1;
+				Direction.y = 1;
 			}
 			else if (point.x - 1 >= 0 && SecondGamerField[point.y][point.x - 1] == PointState::Hit)
 			{
-				TurnX = -1;
+				Direction.x = -1;
 			}
-			else if (point.x + 1 < 10 && SecondGamerField[point.y][point.x + 1] == PointState::Hit)
+			else if (point.x + 1 <= 9 && SecondGamerField[point.y][point.x + 1] == PointState::Hit)
 			{
-				TurnX = 1;
+				Direction.x = 1;
 			}
 
 			do
 			{
 				for (int i = -1; i < 2; i++)
 				{
-					if (point.y + i < 10 && point.y + i >= 0)
+					if (point.y + i <= 9 &&point.y+ i >= 0)
 					{
 						for (int j = -1; j < 2; j++)
 						{
-							if (point.x + j < 10 && point.x + j >= 0 &&
-								SecondGamerField[point.y + i][point.x + j] == PointState::Empty)
+							if (point.x + j <= 9 && point.x + j >= 0 && SecondGamerField[point.y + i][point.x + j] == PointState::Empty)
 							{
 								SecondGamerField[point.y + i][point.x + j] = PointState::Miss;
 							}
 						}
 					}
 				}
-				point.y += TurnY;
-				point.x += TurnX;
-			} while ((TurnY != 0 || TurnX != 0) && point.y < 10 && point.x < 10 &&
-				point.y >= 0 && point.x >= 0 && SecondGamerField[point.y][point.x] == PointState::Hit);
+				point.y += Direction.y;
+				point.x += Direction.x;
+			} while ((Direction.y != 0 || Direction.x != 0) &&point.y <= 9 &&point.x <= 9 &&point.y >= 0 &&point.x>= 0 &&
+				SecondGamerField[point.y][point.x] == PointState::Hit);
 
 			return PointState::Destroyed;
 		}
@@ -561,25 +574,24 @@ PointState Referee::Step(Point point, bool isFirst)
 		if (FirstGamerField[point.y][point.x] == PointState::Empty)
 		{
 			FirstGamerField[point.y][point.x] = PointState::Miss;
-			{
-				return PointState::Miss;
-			}
+			return PointState::Miss;
 		}
 		if (FirstGamerField[point.y][point.x] == PointState::Ship)
 		{
+
 			FirstGamerField[point.y][point.x] = PointState::Hit;
 
-			int i = 1;
-			for (int i = 1; point.y - i >= 0 && FirstGamerField[point.y - i][point.x] != PointState::Empty; i++)
+			for (int i = 1; (point.y - i >= 0) && FirstGamerField[point.y - i][point.x] != PointState::Miss
+				&& FirstGamerField[point.y - i][point.x] != PointState::Empty; i++)
 			{
 				if (FirstGamerField[point.y - i][point.x] == PointState::Ship)
 				{
 					return PointState::Hit;
 				}
-				i++;
 			}
 
-			for (int i = 1; point.y + i < 10 && FirstGamerField[point.y + i][point.x] != PointState::Empty; i++)
+			for (int i = 1; point.y + i <= 9 && FirstGamerField[point.y + i][point.x] != PointState::Miss
+				&& FirstGamerField[point.y + i][point.x] != PointState::Empty; i++)
 			{
 				if (FirstGamerField[point.y + i][point.x] == PointState::Ship)
 				{
@@ -587,7 +599,8 @@ PointState Referee::Step(Point point, bool isFirst)
 				}
 			}
 
-			for (int i = 1; point.x - i > -1 && FirstGamerField[point.y][point.x - i] != PointState::Empty; i++)
+			for (int i = 1; point.x - i >= 0 && FirstGamerField[point.y][point.x - i] != PointState::Miss
+				&& FirstGamerField[point.y][point.x - i] != PointState::Empty; i++)
 			{
 				if (FirstGamerField[point.y][point.x - i] == PointState::Ship)
 				{
@@ -595,7 +608,8 @@ PointState Referee::Step(Point point, bool isFirst)
 				}
 			}
 
-			for (int i = 1; point.x + i < 10 && FirstGamerField[point.y][point.x + i] != PointState::Empty; i++)
+			for (int i = 1; point.x + i <= 9 && FirstGamerField[point.y][point.x + i] != PointState::Miss
+				&& FirstGamerField[point.y][point.x + i] != PointState::Empty; i++)
 			{
 				if (FirstGamerField[point.y][point.x + i] == PointState::Ship)
 				{
@@ -603,46 +617,44 @@ PointState Referee::Step(Point point, bool isFirst)
 				}
 			}
 
-			int TurnY = 0;
-			int	TurnX = 0;
+			Point Direction;
 
 			if (point.y - 1 >= 0 && FirstGamerField[point.y - 1][point.x] == PointState::Hit)
 			{
-				TurnY = -1;
+				Direction.y = -1;
 			}
-			else if (point.y + 1 < 10 && FirstGamerField[point.y + 1][point.x] == PointState::Hit)
+			else if (point.y + 1 <= 9 && FirstGamerField[point.y + 1][point.x] == PointState::Hit)
 			{
-				TurnY = 1;
+				Direction.y = 1;
 			}
 			else if (point.x - 1 >= 0 && FirstGamerField[point.y][point.x - 1] == PointState::Hit)
 			{
-				TurnX = -1;
+				Direction.x = -1;
 			}
-			else if (point.x + 1 < 10 && FirstGamerField[point.y][point.x + 1] == PointState::Hit)
+			else if (point.x + 1 <= 9 && FirstGamerField[point.y][point.x + 1] == PointState::Hit)
 			{
-				TurnX = 1;
+				Direction.x = 1;
 			}
 
 			do
 			{
 				for (int i = -1; i < 2; i++)
 				{
-					if (point.y + i < 10 && point.y + i >= 0)
+					if (point.y + i <= 9 && point.y + i >= 0)
 					{
 						for (int j = -1; j < 2; j++)
 						{
-							if (point.x + j < 10 && point.x + j >= 0 &&
-								FirstGamerField[point.y + i][point.x + j] == PointState::Empty)
+							if (point.x + j <= 9 && point.x + j >= 0 && FirstGamerField[point.y + i][point.x + j] == PointState::Empty)
 							{
 								FirstGamerField[point.y + i][point.x + j] = PointState::Miss;
 							}
 						}
 					}
 				}
-				point.y += TurnY;
-				point.x += TurnX;
-			} while ((TurnY != 0 || TurnX != 0) && point.y < 10 && point.x < 10 &&
-				point.y >= 0 && point.x >= 0 && FirstGamerField[point.y][point.x] == PointState::Hit);
+				point.y += Direction.y;
+				point.x += Direction.x;
+			} while ((Direction.y != 0 || Direction.x != 0) && point.y <= 9 && point.x <= 9 && point.y >= 0 && point.x >= 0 &&
+				FirstGamerField[point.y][point.x] == PointState::Hit);
 
 			return PointState::Destroyed;
 		}
@@ -662,8 +674,9 @@ void play(int rounds, GamerType FirstGamerType, GamerType SecondGamerType)
 		shared_ptr<Gamer> SecondGamer = Gamer::MakeGamer(SecondGamerType);
 
 		Referee Ref(FirstGamer, SecondGamer);
+		
 
-		bool IsFirstGamerTurn = 1;
+		bool IsFirstGamerTurn = true;
 
 		while (Ref.FirstGamerShipsDestroyedCount != TotalShipsCount && Ref.SecondGamerShipsDestroyedCount != TotalShipsCount)
 		{
@@ -677,7 +690,7 @@ void play(int rounds, GamerType FirstGamerType, GamerType SecondGamerType)
 				else
 				{
 					turn = SecondGamer->NextTurn();
-				}		
+				}
 			} while (!Ref.IsCorrectTurn(turn, IsFirstGamerTurn));
 
 			switch (Ref.Step(turn, IsFirstGamerTurn))
@@ -685,14 +698,14 @@ void play(int rounds, GamerType FirstGamerType, GamerType SecondGamerType)
 			case PointState::Miss:
 				if (IsFirstGamerTurn)
 				{
-					FirstGamer->SetHitOnPreviousTurn(0);
-					FirstGamer->SetDestroyShipOnPreviousTurn(0);
+					FirstGamer->SetHitOnPreviousTurn(false);
+					FirstGamer->SetDestroyShipOnPreviousTurn(false);
 					cout << "First gamer missed" << endl;
 				}
 				else
 				{
-					SecondGamer->SetHitOnPreviousTurn(0);
-					SecondGamer->SetDestroyShipOnPreviousTurn(0);
+					SecondGamer->SetHitOnPreviousTurn(false);
+					SecondGamer->SetDestroyShipOnPreviousTurn(false);
 					cout << "Second gamer missed" << endl;
 				}
 				IsFirstGamerTurn = !IsFirstGamerTurn;
@@ -700,15 +713,15 @@ void play(int rounds, GamerType FirstGamerType, GamerType SecondGamerType)
 			case PointState::Hit:
 				if (IsFirstGamerTurn)
 				{
-					FirstGamer->SetHitOnPreviousTurn(1);
-					FirstGamer->SetDestroyShipOnPreviousTurn(0);
+					FirstGamer->SetHitOnPreviousTurn(true);
+					FirstGamer->SetDestroyShipOnPreviousTurn(false);
 					cout << "First gamer damaged (" << turn.x + 1 << ";" << turn.y + 1 << ")" << endl;
 				}
-				
+
 				else
 				{
-					SecondGamer->SetHitOnPreviousTurn(1);
-					SecondGamer->SetDestroyShipOnPreviousTurn(0);
+					SecondGamer->SetHitOnPreviousTurn(true);
+					SecondGamer->SetDestroyShipOnPreviousTurn(false);
 					cout << "Second gamer damaged (" << turn.x + 1 << ";" << turn.y + 1 << ")" << endl;
 				}
 
@@ -716,15 +729,15 @@ void play(int rounds, GamerType FirstGamerType, GamerType SecondGamerType)
 			case PointState::Destroyed:
 				if (IsFirstGamerTurn)
 				{
-					FirstGamer->SetHitOnPreviousTurn(1);
-					FirstGamer->SetDestroyShipOnPreviousTurn(1);
+					FirstGamer->SetHitOnPreviousTurn(true);
+					FirstGamer->SetDestroyShipOnPreviousTurn(true);
 					cout << "First gamer destroyed enemy ship" << endl;
 					Ref.FirstGamerShipsDestroyedCount++;
 				}
 				else
 				{
-					SecondGamer->SetHitOnPreviousTurn(1);
-					SecondGamer->SetDestroyShipOnPreviousTurn(1);
+					SecondGamer->SetHitOnPreviousTurn(true);
+					SecondGamer->SetDestroyShipOnPreviousTurn(true);
 					cout << "Second gamer destroyed enemy ship" << endl;
 					Ref.SecondGamerShipsDestroyedCount++;
 				}
