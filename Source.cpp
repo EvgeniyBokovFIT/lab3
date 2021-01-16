@@ -388,11 +388,6 @@ Referee::Referee(shared_ptr<Gamer> FirstGamer, shared_ptr<Gamer> SecondGamer)
 	}
 }
 
-void Referee::IncGamerDestroyed(bool isFirst)
-{
-	isFirst ? FirstGamerShipsDestroyedCount++ : SecondGamerShipsDestroyedCount++;
-}
-
 bool Referee::IsCorrectField(vector<vector<PointState>> field)
 {
 	size_t EmptyPointsCount = 0;
