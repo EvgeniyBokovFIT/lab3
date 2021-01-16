@@ -5,7 +5,6 @@
 
 #define TotalShipsCount 10
 
-
 using namespace std;
 
 enum class GamerType
@@ -121,8 +120,6 @@ private:
     size_t SecondGamerShipsDestroyedCount;
 public:
     Referee(shared_ptr<Gamer> FirstGamer, shared_ptr<Gamer> SecondGamer);
-
-    void IncGamerDestroyed(bool isFirst);
 
     bool IsCorrectField(vector<vector<PointState>> field);
 
