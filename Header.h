@@ -5,6 +5,7 @@
 
 #define TotalShipsCount 10
 
+
 using namespace std;
 
 enum class GamerType
@@ -39,20 +40,19 @@ public:
     Point();
 
     Point& operator = (const Point other);      
-
 };
 
 class Gamer
 {
     friend class Referee;
 protected:
-    bool HitOnPreviousTurn = false;
+    bool HitOnPreviousTurn;
 
-    bool ShipWasDestroyedOnPreviousTurn = false;
+    bool ShipWasDestroyedOnPreviousTurn;
 
     vector<vector<PointState>> field;
 
-    bool IsCorrectShip(Point point, bool horizontal, ShipType type);
+    bool IsCorrectPlaceForShip(Point point, bool horizontal, ShipType type);
 
     void SetShip(Point point, bool horizontal, ShipType type);
 
@@ -95,7 +95,7 @@ public:
 class OptimalGamer :public Gamer
 {
 private:
-    int HitDirection = 0;
+    int HitDirection;
 
     vector<Point> HitPoints;
 
